@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<database>
+    <element label="Snapshot" max_length="40" name="x_link3_snap_snapshot" type="collection">
+        <element attributes="ignore_filter_on_new=true" default="javascript:global.getNextObjNumberPadded();" display="true" label="Number" max_length="40" name="number" type="string"/>
+        <element label="Data" max_length="255" name="u_data" type="string_full_utf8"/>
+        <element label="Invalid JSON" max_length="40" name="u_invalid_json" type="boolean"/>
+        <element label="Source ID" max_length="40" name="u_source_id" type="string"/>
+        <element label="Table" max_length="40" name="u_table" type="string"/>
+    </element>
+</database>
