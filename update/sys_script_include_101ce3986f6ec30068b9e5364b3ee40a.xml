@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<record_update table="sys_script_include">
+    <sys_script_include action="INSERT_OR_UPDATE">
+        <access>package_private</access>
+        <active>true</active>
+        <api_name>x_link3_snap.Snap</api_name>
+        <client_callable>false</client_callable>
+        <description/>
+        <name>Snap</name>
+        <script><![CDATA[/**
+ * @module Snap
+ */
+var Snap = Class.create();
+
+/**
+ * Registra uma cópia em JSON da tabela atual
+ * em um novo registro na tabela `Snapshot`
+ * @method take
+ * @memberof Snap
+ * @param  {GlideRecord} gr Source GlideRecord instance
+ * @return {GlideRecord}         The Snapshot taken
+ */
+Snap.take = function(gr) {
+  var tablename = gr.getTableName();
+  gs.info(tablename);
+  var sys_id = gr.getUniqueValue();
+  gs.info(sys_id);
+
+  gs.info("Taking a snapshot of" + tablename + " " + sys_id, "snap");
+
+  var data = {};
+  for (var field in gr) {
+    if (field !== "sys_meta") data[field] = gr.getValue(field);
+  }
+
+  var snap_gr = new GlideRecord("x_link3_snap_snapshot");
+  snap_gr.newRecord();
+  snap_gr.setValue("u_source_id", sys_id);
+  snap_gr.setValue("u_table", tablename);
+  snap_gr.setValue("u_data", JSON.stringify(data, null, 2));
+  snap_gr.update();
+
+  return snap_gr;
+};
+
+/**
+ * Transforma um snapshot em GlideRecord sem inserer na DB.
+ * @memberof Snap
+ * @param  {GlideRecord|string} snap Snapshot ou número do snapshot.
+ * @param  {string?} table_name Opcional
+ * @return {GlideRecord} O GlideRecord criado.
+ */
+Snap.toGlideRecord = function(snap, table_name) {
+  var snap_gr;
+  if (typeof snap === "string") {
+    snap_gr = new GlideRecord("x_link3_snap_snapshot");
+    snap_gr.get(snap);
+  } else if (typeof snap === "Object") {
+    snap_gr = snap;
+  } else {
+    throw new Error("Snap.toGlideRecord: Invalid parameter `snap`");
+  }
+
+  var data = this.getData(snap_gr);
+  if (data.error) return false;
+
+  var gr = new GlideRecord(table_name || snap_gr.getValue("u_table"));
+
+  gr.initialize();
+
+  for (var field in data.result) {
+    if (field !== "sys_id") gr.setValue(field, data.result[field]);
+  }
+
+  return gr;
+};
+
+/**
+ * Retorna o sys_id do record original a partir do número de um snapshot.
+ * @memberof Snap
+ * @param  {type} snap_number Número de um snapshot
+ * @return {string}           O sys_id original
+ */
+Snap.sourceID = function(snap_number) {
+  var result = this.get(snap_number);
+  return result.error ? result : result.result.getValue("u_source_id");
+};
+
+/**
+ * Retorna os dados ou erro caso o JSON esteja invalido
+ * @memberof Snap
+ * @param  {GlideRecord} snap_gr Snapshot
+ * @return {Object}  {error: msg || false, result: data || json string}
+ */
+Snap.getData = function(snap_gr) {
+  var ERROR = false;
+  var RESULT = false;
+  var data = snap_gr.getValue("u_data");
+
+  try {
+    RESULT = JSON.parse(data);
+  } catch (e) {
+    snap_gr.setValue("u_invalid_json", true);
+    snap_gr.update();
+    ERROR = "Snap " + snap_gr.getValue("number") + " have invalid JSON";
+  }
+
+  return { error: ERROR, result: RESULT || data };
+};
+
+/**
+ * @description Retorna o GlideRecord do Snapshot
+ * @memberof Snap
+ * @param  {string} snap_number Numero de um snapshot
+ * @return {Object}             `{error? : string, result? : GlideRecord}`
+ */
+Snap.get = function(snap_number) {
+  var snap_gr = new GlideRecord("x_link3_snap_snapshot");
+
+  var ERROR = !snap_gr.get("number", snap_number)
+    ? "Snapshot " + snap_number + " does not exist"
+    : false;
+
+  return { error: ERROR, result: snap_gr };
+};
+
+Snap.prototype = {
+  initialize: function() {},
+  type: "Snap"
+};
+]]></script>
+        <sys_class_name>sys_script_include</sys_class_name>
+        <sys_created_by>gfrancischelli</sys_created_by>
+        <sys_created_on>2017-11-16 20:41:40</sys_created_on>
+        <sys_id>101ce3986f6ec30068b9e5364b3ee40a</sys_id>
+        <sys_mod_count>4</sys_mod_count>
+        <sys_name>Snap</sys_name>
+        <sys_package display_value="Snap" source="x_link3_snap">9b765b106f6ec30068b9e5364b3ee44a</sys_package>
+        <sys_policy>read</sys_policy>
+        <sys_scope display_value="Snap">9b765b106f6ec30068b9e5364b3ee44a</sys_scope>
+        <sys_update_name>sys_script_include_101ce3986f6ec30068b9e5364b3ee40a</sys_update_name>
+        <sys_updated_by>gfrancischelli</sys_updated_by>
+        <sys_updated_on>2017-11-17 11:28:20</sys_updated_on>
+    </sys_script_include>
+</record_update>
